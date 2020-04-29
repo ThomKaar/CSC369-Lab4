@@ -1,0 +1,15 @@
+{
+  "refresh": true,
+  "collection": "states",
+  "aggregation": "fiftyStates",
+  "time": {
+    "start": 20200401,
+    "end": 20200410
+  },
+  "target": "CA",
+  "counties": "San Luis Obispo",
+  "analysis": {
+    "blah": "blah"
+  },
+  "Output": "file.out"
+}

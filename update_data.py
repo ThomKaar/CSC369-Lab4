@@ -43,18 +43,19 @@ def get_db_connection(cred_file: str) -> Database:
     return client[auth_data['db']]
 
 
-def update_collections(db: Database) -> None:
+def update_collections(db: Database, refresh: bool) -> None:
     """
     If covid or states collections don't exist in db, downloads data, creates collections, and inserts data
+    :param refresh: If True, download current data and update database
     :param db: PyMongo Database in which to update collections
     """
     collections = db.list_collection_names()
 
-    if COLL_COVID not in collections:
+    if COLL_COVID not in collections or refresh:
         covid_data = get_covid_data()
         add_collection(db, COLL_COVID, covid_data)
 
-    if COLL_STATES not in collections:
+    if COLL_STATES not in collections or refresh:
         ny_data = get_states_data()
         add_collection(db, COLL_STATES, ny_data)
         fix_dates(db, COLL_STATES)
