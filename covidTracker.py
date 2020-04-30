@@ -1,6 +1,7 @@
 import argparse
 
 from config import Configuration
+from pipeline import create_pipeline
 from update_data import get_db_connection, update_collections
 
 
@@ -18,12 +19,10 @@ def main():
 
     db = get_db_connection(args.auth)
     update_collections(db, test_config.refresh)
-    # Run analyses here
-    print(test_config.pipeline)
 
     collection = db.covid if test_config.collection == 'covid' else db.states
-
-    cursor = collection.aggregate(test_config.pipeline)
+    pipeline = create_pipeline(test_config)
+    cursor = collection.aggregate(pipeline)
 
     for t in cursor:
         print(t)
