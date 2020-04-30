@@ -6,6 +6,10 @@ NOT_STATES = ["AS", "GU", "MP", "VI"]
 
 
 def create_pipeline(test_config: Configuration):
+    """
+    :param test_config: Configuration that describes the desired query
+    :return: the aggregation pipeline required to perform the query described by test_config
+    """
     pipeline = []
 
     match = create_match_stage(test_config)
@@ -20,6 +24,10 @@ def create_pipeline(test_config: Configuration):
 
 
 def create_match_stage(test_config: Configuration):
+    """
+    :param test_config: Configuration that describes the desired query
+    :return: the match stage required to perform the query described by test_confgi
+    """
     res = defaultdict(dict)
     res = create_location_filter(test_config, res)
     res = create_date_filter(test_config, res)
@@ -27,16 +35,30 @@ def create_match_stage(test_config: Configuration):
 
 
 def create_project_stage(test_config: Configuration):
+    """
+    :param test_config: Configuration that describes the desired query
+    :return: the project stage required to perform the query described by test_confgi
+    """
     res = defaultdict(dict)
     res.update({"$project": {"_id": 0, "fips": 0}})
     return dict(res)
 
 
 def create_date_filter(test_config: Configuration, res: defaultdict):
+    """
+    :param test_config: Configuration that describes the desired query
+    :param res: the match stage to add the date filter to
+    :return: the match stage with the date filter added in
+    """
     return dict(res)
 
 
 def create_location_filter(test_config: Configuration, res: defaultdict):
+    """
+    :param test_config: Configuration that describes the desired query
+    :param res: the match stage to add the location filters to
+    :return: the match stage with the location filters added in
+    """
     if test_config.aggregation == 'fiftyStates':
         res["$match"].update({"state:": {"$notin": NOT_STATES}})
     elif test_config.aggregation == 'state':

@@ -20,7 +20,7 @@ def main():
     db = get_db_connection(args.auth)
     update_collections(db, test_config.refresh)
 
-    collection = db.covid if test_config.collection == 'covid' else db.states
+    collection = db[test_config.collection]
     pipeline = create_pipeline(test_config)
     cursor = collection.aggregate(pipeline)
 

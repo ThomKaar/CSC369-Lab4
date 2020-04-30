@@ -90,6 +90,11 @@ def add_collection(db: Database, collection: str, data: JSON) -> None:
 
 
 def fix_dates(db, collection):
+    """
+    Converts dates in a database collection from YYYY-MM-DD to YYYYMMDD
+    :param db: the database to fix dates
+    :param collection: the collection to fix dates
+    """
     pipeline = [
         {
             "$set": {
