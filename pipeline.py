@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from config import Configuration
 
-NOT_STATES = ["AS", "GU", "MP", "VI"]
+TERRITORIES = ["AS", "GU", "MP", "VI"]
 
 
 def create_pipeline(test_config: Configuration):
@@ -40,7 +40,7 @@ def create_project_stage(test_config: Configuration):
     :return: the project stage required to perform the query described by test_confgi
     """
     res = defaultdict(dict)
-    res.update({"$project": {"_id": 0, "fips": 0}})
+    res.update({"$project": {"_id": 0, "fips": 0, "hash": 0}})
     return dict(res)
 
 
@@ -59,17 +59,15 @@ def create_location_filter(test_config: Configuration, res: defaultdict):
     :param res: the match stage to add the location filters to
     :return: the match stage with the location filters added in
     """
+
     if test_config.aggregation == 'fiftyStates':
-        res["$match"].update({"state:": {"$notin": NOT_STATES}})
-    elif test_config.aggregation == 'state':
-        if test_config.collection == 'states':
-            res["$match"].update({"state": test_config.target})
-            if test_config.counties:
-                res["$match"].update({"county": {"$in": test_config.counties}})
-        elif test_config.collection == 'covid':
-            if test_config.aggregation in ['state', 'usa', None]:
-                res["$match"].update({"state": f"{test_config.target}"})
-            elif test_config.aggregation == 'fiftyStates':
-                state_match = {"state": {"$notin": NOT_STATES, "$in": test_config.target}}
-                res["$match"].update({"Sstate": state_match})
+        state_match = {"$nin": TERRITORIES, "$in": test_config.target}
+        res["$match"].update({"state": state_match})
+    elif test_config.target:
+        res["$match"].update({"state": test_config.target})
+
+    if test_config.aggregation == 'county':
+        if test_config.collection == 'states' and test_config.counties:
+            res["$match"].update({"county": {"$in": test_config.counties}})
+
     return res

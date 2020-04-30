@@ -1,15 +1,14 @@
 {
   "refresh": true,
-  "collection": "states",
-  "aggregation": "state",
+  "collection": "covid",
+  "aggregation": "fiftyStates",
   "time": {
     "start": 20200401,
     "end": 20200401
   },
-  "target": "Iowa",
-  "counties": [
-    "Polk",
-    "Scott"
+  "target": [
+    "CA",
+    "NY"
   ],
   "analysis": {
     "blah": "blah"
