@@ -13,7 +13,6 @@ URL_COVID = 'https://covidtracking.com/api/v1/states/daily.json'
 URL_STATES = 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv'
 JSON = List[Dict]
 
-
 def get_db_connection(cred_file: str) -> Database:
     """
     returns a connection to the database described with cred_file

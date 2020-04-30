@@ -1,13 +1,16 @@
 {
   "refresh": true,
   "collection": "states",
-  "aggregation": "fiftyStates",
+  "aggregation": "state",
   "time": {
     "start": 20200401,
-    "end": 20200410
+    "end": 20200401
   },
-  "target": "CA",
-  "counties": "San Luis Obispo",
+  "target": "Iowa",
+  "counties": [
+    "Polk",
+    "Scott"
+  ],
   "analysis": {
     "blah": "blah"
   },
