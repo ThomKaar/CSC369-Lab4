@@ -66,7 +66,7 @@ def create_location_filter(test_config: Configuration, res: defaultdict):
     elif test_config.target:
         res["$match"].update({"state": test_config.target})
 
-    if test_config.aggregation == 'county':
+    if test_config.aggregation in ['county', 'state']:
         if test_config.collection == 'states' and test_config.counties:
             res["$match"].update({"county": {"$in": test_config.counties}})
 

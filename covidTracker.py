@@ -23,6 +23,8 @@ def main():
     collection = db[test_config.collection]
     pipeline = create_pipeline(test_config)
 
+    print(pipeline)
+
     cursor = collection.aggregate(pipeline)
 
     for t in cursor:

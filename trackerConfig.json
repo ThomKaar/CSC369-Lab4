@@ -1,17 +1,28 @@
 {
-  "refresh": true,
-  "collection": "covid",
-  "aggregation": "fiftyStates",
-  "time": {
-    "start": 20200401,
-    "end": 20200401
-  },
-  "target": [
-    "CA",
-    "NY"
+  "refresh": false,
+  "collection": "states",
+  "aggregation": "state",
+  "target": "Iowa",
+  "counties": [
+    "Polk",
+    "Scott"
   ],
-  "analysis": {
-    "blah": "blah"
-  },
-  "Output": "file.out"
+  "time": "month",
+  "analysis": [
+    {
+      "task": {
+        "track": "positive"
+      }
+    },
+    {
+      "output": {
+        "graph": {
+          "type": "scatter",
+          "legend": "on",
+          "combo": "split",
+          "title": "Covid Cases this month"
+        }
+      }
+    }
+  ]
 }
