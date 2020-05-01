@@ -20,9 +20,18 @@ def create_pipeline(test_config: Configuration):
     if project:
         pipeline.append(project)
 
+    aggregation = create_aggregation_stage(test_config)
+    if aggregation:
+        pipeline.append(aggregation)
+
+    sort = create_sort_stage(test_config)
+    if sort:
+        pipeline.append(sort)
+
     return pipeline
 
 
+### Stages
 def create_match_stage(test_config: Configuration):
     """
     :param test_config: Configuration that describes the desired query
@@ -34,16 +43,48 @@ def create_match_stage(test_config: Configuration):
     return dict(res)
 
 
+# TODO: add projections - based on "task"
+# TODO: figure out where to put the for loop if > 1 task
 def create_project_stage(test_config: Configuration):
     """
     :param test_config: Configuration that describes the desired query
     :return: the project stage required to perform the query described by test_confgi
     """
     res = defaultdict(dict)
-    res.update({"$project": {"_id": 0, "fips": 0, "hash": 0}})
+    res["$project"].update({"_id": 0, "fips": 0, "hash": 0})
+    # if task == 'track'
+    #   res["$project"].update({...})
+    # ...
     return dict(res)
 
 
+# TODO: add aggregations
+def create_aggregation_stage(test_config: Configuration):
+    """
+    :param test_config: Configuration that describes the desired query
+    :return: the aggregation stage required to perform the query described by test_confgi
+    """
+    res = defaultdict(dict)
+    # if ....
+    #   res.update({"$group": {}})
+    #   res.update({"$unwind": {}})
+    #   ...
+    return dict(res)
+
+
+# TODO: add sort stage - might not actually need anything more
+def create_sort_stage(test_config: Configuration):
+    """
+    :param test_config: Configuration that describes the desired query
+    :return: the sort stage required to perform the query described by test_confgi
+    """
+    res = defaultdict(dict)
+    res["$sort"].update({"date": 1, "state": 1, "county": 1})
+    return dict(res)
+
+
+### Match filters
+# TODO: filter by date
 def create_date_filter(test_config: Configuration, res: defaultdict):
     """
     :param test_config: Configuration that describes the desired query
