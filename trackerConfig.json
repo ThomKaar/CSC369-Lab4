@@ -1,15 +1,28 @@
 {
   "refresh": true,
   "collection": "states",
-  "aggregation": "fiftyStates",
-  "time": {
-    "start": 20200401,
-    "end": 20200410
-  },
-  "target": "CA",
-  "counties": "San Luis Obispo",
-  "analysis": {
-    "blah": "blah"
-  },
-  "Output": "file.out"
+  "aggregation": "state",
+  "target": "Iowa",
+  "counties": [
+    "Polk",
+    "Scott"
+  ],
+  "time": "month",
+  "analysis": [
+    {
+      "task": {
+        "track": "positive"
+      }
+    },
+    {
+      "output": {
+        "graph": {
+          "type": "scatter",
+          "legend": "on",
+          "combo": "split",
+          "title": "Covid Cases this month"
+        }
+      }
+    }
+  ]
 }

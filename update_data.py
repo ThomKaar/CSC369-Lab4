@@ -52,10 +52,14 @@ def update_collections(db: Database, refresh: bool) -> None:
     collections = db.list_collection_names()
 
     if COLL_COVID not in collections or refresh:
+        if refresh:
+            db[COLL_COVID].drop()
         covid_data = get_covid_data()
         add_collection(db, COLL_COVID, covid_data)
 
     if COLL_STATES not in collections or refresh:
+        if refresh:
+            db[COLL_STATES].drop()
         ny_data = get_states_data()
         add_collection(db, COLL_STATES, ny_data)
         fix_dates(db, COLL_STATES)
@@ -67,7 +71,8 @@ def get_covid_data() -> JSON:
     """
     h = httplib2.Http('.cache', disable_ssl_certificate_validation=True)
     resp_headers, content = h.request(URL_COVID)
-    return content
+    content = content.decode('utf-8')
+    return json.loads(content)
 
 
 def get_states_data() -> JSON:
@@ -91,6 +96,11 @@ def add_collection(db: Database, collection: str, data: JSON) -> None:
 
 
 def fix_dates(db, collection):
+    """
+    Converts dates in a database collection from YYYY-MM-DD to YYYYMMDD
+    :param db: the database to fix dates
+    :param collection: the collection to fix dates
+    """
     pipeline = [
         {
             "$set": {
