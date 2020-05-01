@@ -7,7 +7,7 @@ class Configuration:
         with open(config_file, 'r') as f:
             config_data = json.load(f)
 
-        self.refresh: bool = config_data.get('refresh') == 'true'
+        self.refresh: bool = config_data.get('refresh') == True
         self.collection: str = config_data['collection']
         self.aggregation: Union[str, None] = config_data.get('aggregation')
         self.start: int = 0

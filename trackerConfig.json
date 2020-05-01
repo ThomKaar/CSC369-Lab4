@@ -1,5 +1,5 @@
 {
-  "refresh": false,
+  "refresh": true,
   "collection": "states",
   "aggregation": "state",
   "target": "Iowa",

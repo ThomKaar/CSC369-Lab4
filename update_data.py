@@ -13,6 +13,7 @@ URL_COVID = 'https://covidtracking.com/api/v1/states/daily.json'
 URL_STATES = 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv'
 JSON = List[Dict]
 
+
 def get_db_connection(cred_file: str) -> Database:
     """
     returns a connection to the database described with cred_file
@@ -51,10 +52,14 @@ def update_collections(db: Database, refresh: bool) -> None:
     collections = db.list_collection_names()
 
     if COLL_COVID not in collections or refresh:
+        if refresh:
+            db[COLL_COVID].drop()
         covid_data = get_covid_data()
         add_collection(db, COLL_COVID, covid_data)
 
     if COLL_STATES not in collections or refresh:
+        if refresh:
+            db[COLL_STATES].drop()
         ny_data = get_states_data()
         add_collection(db, COLL_STATES, ny_data)
         fix_dates(db, COLL_STATES)
@@ -66,7 +71,8 @@ def get_covid_data() -> JSON:
     """
     h = httplib2.Http('.cache', disable_ssl_certificate_validation=True)
     resp_headers, content = h.request(URL_COVID)
-    return content
+    content = content.decode('utf-8')
+    return json.loads(content)
 
 
 def get_states_data() -> JSON:
