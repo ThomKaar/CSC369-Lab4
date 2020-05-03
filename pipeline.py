@@ -20,14 +20,13 @@ def create_pipeline(test_config: Configuration):
     if project:
         pipeline.append(project)
 
-    aggregation = create_aggregation_stage(test_config)
+    aggregation = create_facet_stage(test_config)
     if aggregation:
         pipeline.append(aggregation)
 
-    sort = create_sort_stage(test_config)
-    if sort:
-        pipeline.append(sort)
-
+    # sort = create_sort_stage(test_config)
+    # if sort:
+    #     pipeline.append(sort)
     return pipeline
 
 
@@ -43,8 +42,6 @@ def create_match_stage(test_config: Configuration):
     return dict(res)
 
 
-# TODO: add projections - based on "task"
-# TODO: figure out where to put the for loop if > 1 task
 def create_project_stage(test_config: Configuration):
     """
     :param test_config: Configuration that describes the desired query
@@ -52,34 +49,98 @@ def create_project_stage(test_config: Configuration):
     """
     res = defaultdict(dict)
     res["$project"].update({"_id": 0, "fips": 0, "hash": 0})
-    # if task == 'track'
-    #   res["$project"].update({...})
-    # ...
     return dict(res)
 
 
-# TODO: add aggregations
-def create_aggregation_stage(test_config: Configuration):
+def create_facet_stage(test_config: Configuration):
     """
     :param test_config: Configuration that describes the desired query
     :return: the aggregation stage required to perform the query described by test_confgi
     """
-    res = defaultdict(dict)
-    # if ....
-    #   res.update({"$group": {}})
-    #   res.update({"$unwind": {}})
-    #   ...
+    res = defaultdict()
+    res["$facet"] = defaultdict(list)
+
+    sort = create_sort_stage(test_config)
+
+    for i, query in enumerate(test_config.analysis):
+        grouping_stage = create_grouping_stage(test_config)
+
+        if "ratio" in query['task']:
+            numerator_ = query["task"]["ratio"]["numerator"]
+            denominator_ = query["task"]["ratio"]["denominator"]
+
+            if test_config.aggregation in ["usa", "fiftyStates"]:
+                grouping_stage["$group"].update({
+                    f'{numerator_}': {"$sum": f'${numerator_}'},
+                    f'{denominator_}': {"$sum": f'${denominator_}'}
+                })
+
+            projection = {"$project": {}}
+            projection["$project"].update({"date": 1})
+            if test_config.aggregation in ["state", "county"]:
+                projection["$project"].update({f'{test_config.aggregation}': 1})
+            projection["$project"].update({
+                "ratio": {
+                    "$divide": [
+                        f'${numerator_}',
+                        f'${denominator_}'
+                    ]
+                }
+            })
+        elif "track" in query['task']:
+            # TODO: Task - Track
+            track_ = query['task']['track']
+            projection = {
+                "$project": {
+                    "date": 1,
+                    track_: 1
+                }
+            }
+            if test_config.aggregation in ["state", "county"]:
+                projection["$project"].update({f'{test_config.aggregation}': 1})
+            if grouping_stage:
+                grouping_stage['$group'].update({
+                    track_ + "_total": {"$sum": f'${track_}'}
+                })
+        else:
+            # TODO: Task - Stats
+            projection = None
+            pass
+
+        if grouping_stage:
+            res["$facet"][str(i)].append(dict(grouping_stage))
+        res["$facet"][str(i)].append(dict(projection))
+        res["$facet"][str(i)].append(sort)
+
+    res["$facet"] = dict(res["$facet"])
     return dict(res)
 
 
-# TODO: add sort stage - might not actually need anything more
+def create_grouping_stage(test_config):
+    if test_config.aggregation in ['usa', "fiftyStates"]:
+        grouping_stage = {
+            "$group": {
+                "_id": 1,
+            }}
+    elif test_config.collection == 'states' and test_config.aggregation == 'state':
+        grouping_stage = {
+            "$group": {
+                "_id": "$state",
+            }
+        }
+    else:
+        grouping_stage = defaultdict()
+    return grouping_stage
+
+
+# TODO: add sort stage? - this may be sufficient
 def create_sort_stage(test_config: Configuration):
     """
     :param test_config: Configuration that describes the desired query
     :return: the sort stage required to perform the query described by test_confgi
     """
     res = defaultdict(dict)
-    res["$sort"].update({"date": 1, "state": 1, "county": 1})
+    res["$sort"].update({"state": 1, "county": 1, "date": 1})
     return dict(res)
 
 
@@ -102,10 +163,12 @@ def create_location_filter(test_config: Configuration, res: defaultdict):
     """
 
     if test_config.aggregation == 'fiftyStates':
-        state_match = {"$nin": TERRITORIES, "$in": test_config.target}
+        state_match = {"$nin": TERRITORIES}
+        if test_config.target:
+            state_match.update({"$in": test_config.target})
         res["$match"].update({"state": state_match})
     elif test_config.target:
-        res["$match"].update({"state": test_config.target})
+        res["$match"].update({"state": {"$in": test_config.target}})
 
     if test_config.aggregation in ['county', 'state']:
         if test_config.collection == 'states' and test_config.counties:
