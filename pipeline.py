@@ -177,19 +177,3 @@ def create_location_filter(test_config: Configuration, res: defaultdict):
             res["$match"].update({"county": {"$in": test_config.counties}})
 
     return res
-
-
-
-def find_yesterday_date(today):
-    """
-    :param today: Integer date YYYYMMDD that represents the date this code is run
-    :return: the integer date YYYYMMDD for the previous date
-    """
-
-    if is_first_of_month(today):
-        mmdd = today % 1000
-        if mmdd == 101:
-           yesterday = today - mmdd - 10000 + 1231
-           return yesterday
-    else:
-        return today - 1
