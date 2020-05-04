@@ -90,18 +90,25 @@ def create_facet_stage(test_config: Configuration):
         elif "track" in query['task']:
             # TODO: Task - Track
             track_ = query['task']['track']
-            projection = {
-                "$project": {
-                    "date": 1,
-                    track_: 1
-                }
-            }
-            if test_config.aggregation in ["state", "county"]:
-                projection["$project"].update({f'{test_config.aggregation}': 1})
             if grouping_stage:
                 grouping_stage['$group'].update({
                     track_ + "_total": {"$sum": f'${track_}'}
                 })
+                projection = {
+                    "$project": {
+                        "date": 1,
+                        track_ + '_total': 1
+                    }
+                }
+            else:
+                projection = {
+                    "$project": {
+                        "date": 1,
+                        track_: 1
+                    }
+                }
+            if test_config.aggregation in ["state", "county"]:
+                projection["$project"].update({f'{test_config.aggregation}': 1})
         else:
             # TODO: Task - Stats
             projection = None
