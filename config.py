@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Union
 
 class Configuration:
@@ -51,7 +51,7 @@ class Configuration:
                 self.start: int = today - 1
                 self.end: int = today - 1
             elif time == 'week':
-                self.start = today - 6
+                self.start = sub_seven_days(today)
                 self.end = today
             elif time == 'month':
                 self.start = today // 100 * 100 + 1
@@ -63,3 +63,11 @@ class Configuration:
 
 def date_to_int(dt: datetime) -> int:
     return dt.year * 10000 + dt.month * 100 + dt.day
+
+
+def sub_seven_days(date: int) -> int:
+    y = date // 10000
+    m = (date - y * 10000) // 100
+    d = (date - y * 10000 - m * 100)
+    dt = datetime(y, m, d) - timedelta(7)
+    return date_to_int(dt)
