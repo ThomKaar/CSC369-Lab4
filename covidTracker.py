@@ -1,4 +1,5 @@
 import argparse
+from pprint import pprint
 
 from config import Configuration
 from pipeline import create_pipeline
@@ -23,12 +24,13 @@ def main():
     collection = db[test_config.collection]
     pipeline = create_pipeline(test_config)
 
-    print(pipeline)
+    with open('pipeline.json', 'w') as f:
+        print(pipeline, file=f)
 
     cursor = collection.aggregate(pipeline)
 
     for t in cursor:
-        print(t)
+        pprint(t, width=120)
 
 
 if __name__ == '__main__':

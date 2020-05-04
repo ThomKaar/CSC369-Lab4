@@ -60,9 +60,9 @@ def update_collections(db: Database, refresh: bool) -> None:
     if COLL_STATES not in collections or refresh:
         if refresh:
             db[COLL_STATES].drop()
-        ny_data = get_states_data()
-        add_collection(db, COLL_STATES, ny_data)
-        fix_dates(db, COLL_STATES)
+        states_data = get_states_data()
+        add_collection(db, COLL_STATES, states_data)
+        fix_states_data(db, COLL_STATES)
 
 
 def get_covid_data() -> JSON:
@@ -95,7 +95,7 @@ def add_collection(db: Database, collection: str, data: JSON) -> None:
     db[collection].insert_many(data)
 
 
-def fix_dates(db, collection):
+def fix_states_data(db, collection):
     """
     Converts dates in a database collection from YYYY-MM-DD to YYYYMMDD
     :param db: the database to fix dates
@@ -113,7 +113,9 @@ def fix_dates(db, collection):
                             "format": "%Y%m%d"
                         }
                     }
-                }
+                },
+                "cases": {"$toInt": "$cases"},
+                "deaths": {"$toInt": "$deaths"}
             }
         },
         {

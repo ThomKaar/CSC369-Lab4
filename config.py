@@ -17,8 +17,7 @@ class Configuration:
 
         temp_target = config_data.get('target')
         # sets self.target to None if not DNE, else makes sure target is an array
-        self.target: Union[None, List[str]] = temp_target or (
-            [temp_target] if (type(temp_target) == str) else temp_target)
+        self.target: Union[None, List[str]] = [temp_target] if (type(temp_target) == str) else temp_target
 
         temp_counties = config_data.get('counties')
         # sets self.counties to None if not DNE, else makes sure target is an array
@@ -33,7 +32,7 @@ class Configuration:
             if self.aggregation == 'county':
                 raise ValueError("Covid data can't be aggregated by county")
         elif self.collection == 'states':
-            if type(self.target) == list:
+            if self.target and len(self.target) > 1:
                 raise ValueError("States data must be filtered by a single state")
             elif self.aggregation in ['usa', 'fiftyStates']:
                 raise ValueError("States data aggregation must be 'state' or 'county'")
