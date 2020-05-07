@@ -64,7 +64,7 @@ def create_facet_stage(test_config: Configuration):
 
     for i, query in enumerate(test_config.analysis):
         grouping_stage = create_grouping_stage(test_config)
-
+        projection = defaultdict(dict)
         if "ratio" in query['task']:
             numerator_ = query["task"]["ratio"]["numerator"]
             denominator_ = query["task"]["ratio"]["denominator"]
@@ -89,34 +89,77 @@ def create_facet_stage(test_config: Configuration):
             })
         elif "track" in query['task']:
             # TODO: Task - Track
-            track_ = query['task']['track']
-            if grouping_stage:
+            var_to_track = query['task']['track']
+            if test_config.aggregation == 'state':
+                if test_config.collection == 'states':
+                    grouping_stage['$group'].update({
+                        var_to_track + "_total": {"$sum": f'${var_to_track}'}
+                    })
+                    projection['$project'].update(
+                        {
+                            "_id": 0,
+                            "date": "$_id",
+                            var_to_track + '_total': 1
+                        }
+                    )
+                else:
+                    grouping_stage['$group'].update({
+                        "_id": "$state",
+                        "data": {
+                            "$push": {
+                                "date": "$date",
+                                var_to_track: f"${var_to_track}"
+                            }
+                        }
+                    })
+                    projection['$project'].update(
+                        {
+                            "_id": 0,
+                            "state": "$_id",
+                            "data": 1
+                        }
+                    )
+            elif test_config.aggregation == 'county':
                 grouping_stage['$group'].update({
-                    track_ + "_total": {"$sum": f'${track_}'}
+                    "_id": "$county",
+                    "data": {
+                        "$push": {
+                            "date": "$date",
+                            var_to_track: {"$sum": f"${var_to_track}"}
+                        }
+                    }
                 })
-                projection = {
-                    "$project": {
-                        "date": 1,
-                        track_ + '_total': 1
+                projection['$project'].update(
+                    {
+                        "_id": 0,
+                        "county": "$_id",
+                        "data": 1
                     }
-                }
+                )
             else:
-                projection = {
-                    "$project": {
-                        "date": 1,
-                        track_: 1
+                grouping_stage['$group'].update(
+                    {
+                        var_to_track: {"$sum": f"${var_to_track}"}
                     }
-                }
-            if test_config.aggregation in ["state", "county"]:
-                projection["$project"].update({f'{test_config.aggregation}': 1})
+                )
+                projection['$project'].update(
+                    {
+                        "_id": 0,
+                        "date": "$_id",
+                        var_to_track: 1
+                    }
+                )
         else:
             # TODO: Task - Stats
-            projection = None
+            projection = {
+                "$project": query['task']['stats']
+            }
             pass
 
         if grouping_stage:
             res["$facet"][str(i)].append(dict(grouping_stage))
-        res["$facet"][str(i)].append(dict(projection))
+        if projection:
+            res["$facet"][str(i)].append(dict(projection))
         res["$facet"][str(i)].append(sort)
 
     res["$facet"] = dict(res["$facet"])
@@ -124,19 +167,19 @@ def create_facet_stage(test_config: Configuration):
 
 
 def create_grouping_stage(test_config):
+    grouping_stage = defaultdict(dict)
     if test_config.aggregation in ['usa', "fiftyStates"]:
-        grouping_stage = {
-            "$group": {
-                "_id": 1,
-            }}
-    elif test_config.collection == 'states' and test_config.aggregation == 'state':
-        grouping_stage = {
-            "$group": {
-                "_id": "$state",
+        grouping_stage["$group"].update(
+            {
+                "_id": "$date"
             }
-        }
-    else:
-        grouping_stage = defaultdict()
+        )
+    elif test_config.aggregation == 'state' and test_config.collection == 'states':
+        grouping_stage['$group'].update(
+            {
+                "_id": "$date",
+            }
+        )
     return grouping_stage
 
 
@@ -152,7 +195,6 @@ def create_sort_stage(test_config: Configuration):
 
 
 ### Match filters
-# TODO: filter by date
 def create_date_filter(test_config: Configuration, res: defaultdict):
     """
     :param test_config: Configuration that describes the desired query
