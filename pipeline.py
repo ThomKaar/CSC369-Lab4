@@ -70,11 +70,19 @@ def create_facet_stage(test_config: Configuration):
         projection_stage = defaultdict(dict)
 
         if "ratio" in query['task']:
-            unwind_regroup_stage = task_ratio(test_config, query, grouping_stage, unwind_regroup_stage,
+            unwind_regroup_stage = task_ratio(
+                test_config,
+                query,
+                grouping_stage,
+                unwind_regroup_stage,
                 projection_stage)
 
         elif "track" in query['task']:
-            unwind_regroup_stage = task_track(test_config, query, grouping_stage, unwind_regroup_stage,
+            unwind_regroup_stage = task_track(
+                test_config,
+                query,
+                grouping_stage,
+                unwind_regroup_stage,
                 projection_stage)
 
         else:
