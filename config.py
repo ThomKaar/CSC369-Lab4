@@ -2,12 +2,13 @@ import json
 from datetime import datetime, timedelta
 from typing import List, Dict, Union
 
+
 class Configuration:
     def __init__(self, config_file):
         with open(config_file, 'r') as f:
             config_data = json.load(f)
 
-        self.refresh: bool = config_data.get('refresh') == True
+        self.refresh: bool = config_data.get('refresh')
         self.collection: str = config_data['collection']
         self.aggregation: Union[str, None] = config_data.get('aggregation')
         self.start: int = 0
