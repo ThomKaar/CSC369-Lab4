@@ -64,8 +64,9 @@ def create_facet_stage(test_config: Configuration):
 
     for i, query in enumerate(test_config.analysis):
         grouping_stage = create_grouping_stage(test_config)
-        unwind_regroup_stage = None
+        unwind_regroup_stage = []
         projection_stage = defaultdict(dict)
+
         if "ratio" in query['task']:
             numerator_var = query["task"]["ratio"]["numerator"]
             denominator_var = query["task"]["ratio"]["denominator"]
@@ -79,24 +80,51 @@ def create_facet_stage(test_config: Configuration):
                     }
                 )
 
+                unwind_regroup_stage.append(
+                    {
+                        '$addFields': {
+                            "ratio": {
+                                "$cond":
+                                    {
+                                        "if": {"$gt": [f'${denominator_var}', 0]},
+                                        "then": {
+                                            "$divide": [
+                                                f'${numerator_var}',
+                                                f'${denominator_var}'
+                                            ]
+                                        },
+                                        "else": 0
+                                    }
+                            },
+                        }
+                    }
+                )
+
+                unwind_regroup_stage.append(
+                    {
+                        '$sort': {"_id": 1}
+                    }
+                )
+
+                unwind_regroup_stage.append(
+                    {
+                        '$group': {
+                            "_id": test_config.aggregation,
+                            "data": {
+                                "$push": {
+                                    "date": "$_id",
+                                    "ratio": "$ratio"
+                                }
+                            }
+                        }
+                    }
+                )
+
                 projection_stage['$project'].update(
                     {
                         "_id": 0,
-                        "date": "$_id",
-                        "ratio": {
-                            "$cond":
-                                {
-                                    "if": {"$gt": [f'${denominator_var}', 0]},
-                                    "then": {
-                                        "$divide": [
-                                            f'${numerator_var}',
-                                            f'${denominator_var}'
-                                        ]
-                                    },
-                                    "else": 0
-                                }
-                        },
-                        "aggregation": test_config.aggregation
+                        "aggregation": "$_id",
+                        "data": 1
                     }
                 )
 
@@ -172,8 +200,8 @@ def create_facet_stage(test_config: Configuration):
             else:
                 print("Something went wrong here")
         elif "track" in query['task']:
-            # TODO: Task - Track
             var_to_track = query['task']['track']
+
             if test_config.aggregation == 'state':
                 if test_config.collection == 'states':
                     grouping_stage['$group'].update({
@@ -233,6 +261,7 @@ def create_facet_stage(test_config: Configuration):
                         var_to_track: 1
                     }
                 )
+
         else:
             # TODO: Task - Stats
             projection_stage = {
@@ -243,12 +272,12 @@ def create_facet_stage(test_config: Configuration):
         if grouping_stage:
             res["$facet"][str(i)].append(dict(grouping_stage))
         if unwind_regroup_stage:
-            res["$facet"][str(i)] += (unwind_regroup_stage)
+            res["$facet"][str(i)] += unwind_regroup_stage
         if projection_stage:
             res["$facet"][str(i)].append(dict(projection_stage))
         res["$facet"][str(i)].append(sort)
 
-    res["$facet"] = dict(res["$facet"])
+        res["$facet"] = dict(res["$facet"])
     return dict(res)
 
 
