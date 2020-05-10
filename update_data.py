@@ -56,6 +56,7 @@ def update_collections(db: Database, refresh: bool) -> None:
             db[COLL_COVID].drop()
         covid_data = get_covid_data()
         add_collection(db, COLL_COVID, covid_data)
+        fix_covid_data(db, COLL_COVID)
 
     if COLL_STATES not in collections or refresh:
         if refresh:
@@ -64,7 +65,7 @@ def update_collections(db: Database, refresh: bool) -> None:
         add_collection(db, COLL_STATES, states_data)
         fix_states_data(db, COLL_STATES)
 
-# TODO: fix so that properties match spec: "tests", "testIncrease", "hospitalization", "hospitalizationIncrease"
+
 def get_covid_data() -> JSON:
     """
     :return: current COVID-19 by state data JSON
@@ -75,6 +76,7 @@ def get_covid_data() -> JSON:
     return json.loads(content)
 
 
+# TODO: fix so that properties match spec: "tests", "testIncrease", "hospitalization", "hospitalizationIncrease"
 def get_states_data() -> JSON:
     """
     :return: current COVID-19 by county data JSON
@@ -93,6 +95,10 @@ def add_collection(db: Database, collection: str, data: JSON) -> None:
     :param data: data to be inserted - List of JSON objects
     """
     db[collection].insert_many(data)
+
+
+def fix_covid_data(db, COLL_COVID):
+    pass
 
 
 # TODO: Calculate deathIncrease and positiveIncrease
