@@ -265,7 +265,7 @@ def task_ratio(test_config, query, grouping_stage, unwind_regroup_stage, project
                 f'{numerator_var}': {"$sum": f'${numerator_var}'},
                 f'{denominator_var}': {"$sum": f'${denominator_var}'}}}})
 
-        unwind_regroup_stage.append(
+        unwind_regroup_stage += [
             {"$unwind": "$data"},
             {"$addFields": {"ratio": {"$cond": {
                 "if": {"$gt": [f'$data.{denominator_var}', 0]},
@@ -278,7 +278,7 @@ def task_ratio(test_config, query, grouping_stage, unwind_regroup_stage, project
                 "_id": f"$_id",
                 "data": {"$push": {
                     "date": "$data.date",
-                    "ratio": "$ratio"}}}})
+                    "ratio": "$ratio"}}}}]
 
         projection_stage['$project'].update({
             "_id": 0,

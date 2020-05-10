@@ -36,7 +36,7 @@ def main():
             task=test_config.analysis[n]['task'],
             output=test_config.analysis[n]['output'],
             data=result[t][0])
-        if 'table' in q.output:
+        if 'track' in q.task and 'table' in q.output:
             row = q.output['table'].get('row')
             col = q.output['table'].get('column')
             title = q.output['table'].get('title')
