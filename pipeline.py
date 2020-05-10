@@ -64,7 +64,6 @@ def create_facet_stage(test_config: Configuration):
 
     for i, query in enumerate(test_config.analysis):
         grouping_stage = create_grouping_stage(test_config)
-
         if "ratio" in query['task']:
             numerator_ = query["task"]["ratio"]["numerator"]
             denominator_ = query["task"]["ratio"]["denominator"]
@@ -135,6 +134,12 @@ def create_grouping_stage(test_config):
                 "_id": "$state",
             }
         }
+    elif test_config.collection == 'covid' and test_config.aggregation == 'country_wide':
+        grouping_stage = {
+            "$group": {
+                "_id": 1,
+            }
+        }
     else:
         grouping_stage = defaultdict()
     return grouping_stage
@@ -182,3 +187,15 @@ def create_location_filter(test_config: Configuration, res: defaultdict):
             res["$match"].update({"county": {"$in": test_config.counties}})
 
     return res
+
+
+# this is only for the covid collection
+def create_country_wide_aggregation(test_config: Configuration, res: defaultdict):
+    """
+    :param test_config: Configuration that describes the desired query
+    :param res: the group stage to add the country filter
+    :return: the group stage with the country aggregation
+    """
+    res = {"$group": {"_id": 1, "targetSum": {"$sum": test_config.target}}} 
+    return dict(res)
+
