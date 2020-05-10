@@ -64,7 +64,7 @@ def update_collections(db: Database, refresh: bool) -> None:
         add_collection(db, COLL_STATES, states_data)
         fix_states_data(db, COLL_STATES)
 
-
+# TODO: fix so that properties match spec: "tests", "testIncrease", "hospitalization", "hospitalizationIncrease"
 def get_covid_data() -> JSON:
     """
     :return: current COVID-19 by state data JSON
@@ -95,6 +95,7 @@ def add_collection(db: Database, collection: str, data: JSON) -> None:
     db[collection].insert_many(data)
 
 
+# TODO: Calculate deathIncrease and positiveIncrease
 def fix_states_data(db, collection):
     """
     Converts dates in a database collection from YYYY-MM-DD to YYYYMMDD
@@ -114,8 +115,8 @@ def fix_states_data(db, collection):
                         }
                     }
                 },
-                "cases": {"$toInt": "$cases"},
-                "deaths": {"$toInt": "$deaths"}
+                "positive": {"$toInt": "$cases"},
+                "death": {"$toInt": "$deaths"}
             }
         },
         {

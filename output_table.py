@@ -10,9 +10,15 @@ def date_to_str(date: int) -> str:
 
 
 HEADERS = {
-    "death": "Cumulative Deaths",
     "positive": "Cumulative Positives",
-    "time": "Date"
+    "positiveIncrease": "Daily Positives",
+    "death": "Cumulative Deaths",
+    "deathIncrease": "Daily Deaths",
+    "tests": "Cumulative Tests",
+    "testIncrease": "Daily Tests",
+    "time": "Date",
+    "hospitalization": "Cumulative Hospitalized",
+    "hospitalizationIncrease": "Daily Hospitalized"
 }
 
 
