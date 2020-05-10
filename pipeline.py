@@ -100,7 +100,7 @@ def create_facet_stage(test_config: Configuration):
             res["$facet"][str(i)].append(dict(projection_stage))
         res["$facet"][str(i)].append(sort)
 
-        res["$facet"] = dict(res["$facet"])
+    res["$facet"] = dict(res["$facet"])
 
     return dict(res)
 
@@ -280,8 +280,8 @@ def create_date_filter(test_config: Configuration, res: defaultdict):
     :param res: the match stage to add the date filter to
     :return: the match stage with the date filter added in
     """
-
-    res["$match"].update({"$and": [{"date": {"$gte": test_config.start}}, {"date": {"$lte": test_config.end}}]})
+    if not (test_config.start == test_config.end == 0):
+        res["$match"].update({"$and": [{"date": {"$gte": test_config.start}}, {"date": {"$lte": test_config.end}}]})
     return dict(res)
 
 

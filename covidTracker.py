@@ -1,7 +1,8 @@
 import argparse
-from pprint import pprint
 
 from config import Configuration
+from output_html import get_header
+from output_table import create_table, Query
 from pipeline import create_pipeline
 from update_data import get_db_connection, update_collections
 
@@ -27,10 +28,21 @@ def main():
     with open('pipeline.json', 'w') as f:
         print(pipeline, file=f)
 
-    cursor = collection.aggregate(pipeline)
+    result = collection.aggregate(pipeline).next()
 
-    for t in cursor:
-        pprint(t, width=120)
+    page = get_header()
+    for n, t in enumerate(result):
+        q = Query(test_config.analysis[n]['task'], test_config.analysis[n]['output'], result[t][0])
+        if 'table' in q.output:
+            row = q.output['table'].get('row')
+            col = q.output['table'].get('column')
+            title = q.output['table'].get('title')
+            page += create_table(q, row, col, title)
+
+    with open(f'my.html', 'w') as f:
+        print(page, file=f)
+
+    print("done")
 
 
 if __name__ == '__main__':

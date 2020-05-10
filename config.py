@@ -40,6 +40,14 @@ class Configuration:
         else:
             raise ValueError(f'Unknown collection {self.collection}')
 
+        for a in self.analysis:
+            if 'table' in a['output']:
+                if (('track' in a['task'] or 'ratio' in a['task']) and not ('row' in a[
+                    'output']['table'] and 'column' in a['output']['table'])):
+                    raise ValueError(f'Track and Ratio tasks require both row and column specifications')
+                if ('stats' in a['task'] and not ('row' in a['output']['table'] or 'column' in a['output']['table'])):
+                    raise ValueError(f'Stats tasks require either row or column specification')
+
     def set_start_end(self, config_data):
         # get start/end range
         time = config_data.get('time')
