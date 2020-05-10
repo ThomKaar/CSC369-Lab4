@@ -1,4 +1,5 @@
 import argparse
+from pprint import pprint
 
 from config import Configuration
 from output_html import get_header
@@ -42,8 +43,11 @@ def main():
             title = q.output['table'].get('title')
             page += create_table(q, row, col, title)
 
-    with open(f'my.html', 'w') as f:
-        print(page, file=f)
+            with open(f'my.html', 'w') as f:
+                print(page, file=f)
+        else:
+            with open(test_config.output_file, 'w') as f:
+                pprint(result, f)
 
     print("done")
 
