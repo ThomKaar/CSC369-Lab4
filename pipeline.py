@@ -16,6 +16,10 @@ def create_pipeline(test_config: Configuration):
     if match:
         pipeline.append(match)
 
+    sort = create_sort_stage(test_config)
+    if sort:
+        pipeline.append(sort)
+
     project = create_project_stage(test_config)
     if project:
         pipeline.append(project)
@@ -24,13 +28,10 @@ def create_pipeline(test_config: Configuration):
     if aggregation:
         pipeline.append(aggregation)
 
-    # sort = create_sort_stage(test_config)
-    # if sort:
-    #     pipeline.append(sort)
     return pipeline
 
 
-### Stages
+# Stages
 def create_match_stage(test_config: Configuration):
     """
     :param test_config: Configuration that describes the desired query
@@ -63,77 +64,69 @@ def create_facet_stage(test_config: Configuration):
     sort = create_sort_stage(test_config)
 
     for i, query in enumerate(test_config.analysis):
+
         grouping_stage = create_grouping_stage(test_config)
+        unwind_regroup_stage = []
+        projection_stage = defaultdict(dict)
+
         if "ratio" in query['task']:
-            numerator_ = query["task"]["ratio"]["numerator"]
-            denominator_ = query["task"]["ratio"]["denominator"]
+            unwind_regroup_stage = task_ratio(
+                test_config,
+                query,
+                grouping_stage,
+                unwind_regroup_stage,
+                projection_stage)
 
-            if test_config.aggregation in ["usa", "fiftyStates"]:
-                grouping_stage["$group"].update({
-                    f'{numerator_}': {"$sum": f'${numerator_}'},
-                    f'{denominator_}': {"$sum": f'${denominator_}'}
-                })
-
-            projection = {"$project": {}}
-            projection["$project"].update({"date": 1})
-            if test_config.aggregation in ["state", "county"]:
-                projection["$project"].update({f'{test_config.aggregation}': 1})
-            projection["$project"].update({
-                "ratio": {
-                    "$divide": [
-                        f'${numerator_}',
-                        f'${denominator_}'
-                    ]
-                }
-            })
         elif "track" in query['task']:
-            # TODO: Task - Track
-            track_ = query['task']['track']
-            if grouping_stage:
-                grouping_stage['$group'].update({
-                    track_ + "_total": {"$sum": f'${track_}'}
-                })
-                projection = {
-                    "$project": {
-                        "date": 1,
-                        track_ + '_total': 1
-                    }
-                }
-            else:
-                projection = {
-                    "$project": {
-                        "date": 1,
-                        track_: 1
-                    }
-                }
-            if test_config.aggregation in ["state", "county"]:
-                projection["$project"].update({f'{test_config.aggregation}': 1})
-        else:
-            # TODO: Task - Stats
-            projection = None
+            unwind_regroup_stage = task_track(
+                test_config,
+                query,
+                grouping_stage,
+                unwind_regroup_stage,
+                projection_stage)
+
+        elif "stats" in query['task']:
+            projection_stage = {
+                "$project": query['task']['stats']
+            }
+            
+            unwind_regroup_stage = task_stats(
+                test_config,
+                query,
+                grouping_stage,
+                unwind_regroup_stage,
+                projection_stage)
             pass
 
         if grouping_stage:
             res["$facet"][str(i)].append(dict(grouping_stage))
-        res["$facet"][str(i)].append(dict(projection))
+        if unwind_regroup_stage:
+            res["$facet"][str(i)] += unwind_regroup_stage
+        if projection_stage:
+            res["$facet"][str(i)].append(dict(projection_stage))
         res["$facet"][str(i)].append(sort)
 
-    res["$facet"] = dict(res["$facet"])
+        res["$facet"] = dict(res["$facet"])
+
     return dict(res)
 
 
 def create_grouping_stage(test_config):
-    if test_config.aggregation in ['usa', "fiftyStates"]:
-        grouping_stage = {
-            "$group": {
-                "_id": 1,
-            }}
-    elif test_config.collection == 'states' and test_config.aggregation == 'state':
-        grouping_stage = {
-            "$group": {
-                "_id": "$state",
+    grouping_stage = defaultdict(dict)
+    if test_config.aggregation in ['usa', "fiftyStates"] or (
+            test_config.collection == 'states' and test_config.aggregation == 'state'):
+        grouping_stage["$group"].update(
+            {
+                "_id": "$date"
             }
-        }
+        )
+    elif (test_config.collection == 'states' and test_config.aggregation == 'county') or (
+            test_config.collection == 'covid' and test_config.aggregation == 'state'):
+        grouping_stage['$group'].update(
+            {
+                "_id": f"${test_config.aggregation}"
+            }
+        )
     elif test_config.collection == 'covid' and test_config.aggregation == 'country_wide':
         grouping_stage = {
             "$group": {
@@ -141,11 +134,10 @@ def create_grouping_stage(test_config):
             }
         }
     else:
-        grouping_stage = defaultdict()
+        print("something went wrong")
     return grouping_stage
 
 
-# TODO: add sort stage? - this may be sufficient
 def create_sort_stage(test_config: Configuration):
     """
     :param test_config: Configuration that describes the desired query
@@ -156,14 +148,195 @@ def create_sort_stage(test_config: Configuration):
     return dict(res)
 
 
-### Match filters
-# TODO: filter by date
+# Tasks
+def task_track(test_config, query, grouping_stage, unwind_regroup_stage, projection_stage):
+    var_to_track = query['task']['track']
+
+    if test_config.aggregation in ['usa', "fiftyStates"] or (
+            test_config.collection == 'states' and test_config.aggregation == 'state'):
+        grouping_stage['$group'].update({
+            var_to_track: {"$sum": f'${var_to_track}'}
+        })
+
+        unwind_regroup_stage.append({"$sort": {"_id": 1}})
+
+        unwind_regroup_stage.append({
+            "$group": {
+                "_id": test_config.aggregation,
+                "data": {"$push": {
+                    "date": "$_id",
+                    var_to_track: f"${var_to_track}"
+                }}}})
+
+        projection_stage['$project'].update({
+            "_id": 0,
+            "aggregation": "$_id",
+            "data": 1,
+        })
+
+        if test_config.target:
+            projection_stage['$project'].update({
+                "target": test_config.target
+            })
+
+        if test_config.collection == 'states' and test_config.counties:
+            projection_stage['$project'].update({
+                "counties": test_config.counties
+            })
+
+    elif (test_config.aggregation == 'state' and test_config.collection == 'covid') or (
+            test_config.aggregation == 'county' and test_config.collection == 'states'):
+        grouping_stage['$group'].update({
+            "_id": f"${test_config.aggregation}",
+            "data": {"$push": {
+                "date": "$date",
+                var_to_track: f"${var_to_track}"}}})
+
+        projection_stage['$project'].update({
+            "_id": 0,
+            f"{test_config.aggregation}": "$_id",
+            "data": 1})
+
+    else:
+        print("Trouble")
+
+    return unwind_regroup_stage
+
+
+def task_ratio(test_config, query, grouping_stage, unwind_regroup_stage, projection_stage):
+    numerator_var = query["task"]["ratio"]["numerator"]
+    denominator_var = query["task"]["ratio"]["denominator"]
+
+    if test_config.aggregation in ['usa', "fiftyStates"] or (
+            test_config.collection == 'states' and test_config.aggregation == 'state'):
+        grouping_stage['$group'].update({
+            f"{numerator_var}": {"$sum": f"${numerator_var}"},
+            f"{denominator_var}": {"$sum": f"${denominator_var}"}
+        })
+
+        unwind_regroup_stage.append({
+            '$addFields': {"ratio": {
+                "$cond": {
+                    "if": {"$gt": [f'${denominator_var}', 0]},
+                    "then": {
+                        "$divide": [
+                            f'${numerator_var}',
+                            f'${denominator_var}'
+                        ]
+                    },
+                    "else": 0}}}})
+
+        unwind_regroup_stage.append(
+            {'$sort': {"_id": 1}},
+            {'$group': {
+                "_id": test_config.aggregation,
+                "data": {
+                    "$push": {
+                        "date": "$_id",
+                        "ratio": "$ratio"}}}})
+
+        projection_stage['$project'].update({
+            "_id": 0,
+            "aggregation": "$_id",
+            "data": 1
+        })
+
+        if test_config.target:
+            projection_stage['$project'].update({
+                "target": test_config.target
+            })
+
+        if test_config.collection == 'states' and test_config.counties:
+            projection_stage['$project'].update({
+                "counties": test_config.counties
+            })
+
+    elif (test_config.collection == 'covid' and test_config.aggregation == 'state') or (
+            test_config.collection == 'states' and test_config.aggregation == 'county'):
+        grouping_stage["$group"].update({
+            "data": {"$push": {
+                "date": "$date",
+                f'{numerator_var}': {"$sum": f'${numerator_var}'},
+                f'{denominator_var}': {"$sum": f'${denominator_var}'}}}})
+
+        unwind_regroup_stage.append(
+            {"$unwind": "$data"},
+            {"$addFields": {"ratio": {"$cond": {
+                "if": {"$gt": [f'$data.{denominator_var}', 0]},
+                "then": {
+                    "$divide": [
+                        f'$data.{numerator_var}',
+                        f'$data.{denominator_var}']},
+                "else": 0}}}},
+            {"$group": {
+                "_id": f"$_id",
+                "data": {"$push": {
+                    "date": "$data.date",
+                    "ratio": "$ratio"}}}})
+
+        projection_stage['$project'].update({
+            "_id": 0,
+            f"{test_config.aggregation}": "$_id",
+            "data": 1})
+
+    else:
+        print("Something went wrong here")
+
+    return unwind_regroup_stage
+
+
+
+# Task stats
+def task_stats(test_config, query, grouping_stage, unwind_regroup_stage, projection_stage):
+    statVars = []
+    for i in range(len(projection_stage["$project"])):
+        statVars.append(projection_stage["$project"][i])
+    projection_stage["$project"] = {}
+    """
+    print(statVars)
+    print("test_config")
+    print(test_config)
+    print("\n\n\nquery")
+    print(query)
+    print("\n\n\ngrouping_stage")
+    print(grouping_stage["$group"])
+    print("\n\n\nunwind_regroup_stage")
+    print(unwind_regroup_stage)
+    print("\n\n\nprojection_stage")
+    print(projection_stage)
+    """
+    if test_config.aggregation in ['usa', "fiftyStates"] or (
+            test_config.collection == 'states' and test_config.aggregation == 'state'):
+        
+        #perform aggregation for states
+        pass
+    elif (test_config.collection == 'covid' and test_config.aggregation == 'state') or (
+            test_config.collection == 'states' and test_config.aggregation == 'county'):
+        
+        for i in range(len(statVars)):
+            grouping_stage['$group'].update({
+                f"mean{statVars[i]}": {"$avg": f"${statVars[i]}"},
+                f"stdDev{statVars[i]}": {"$stdDevPop": f"${statVars[i]}"}
+                })
+            projection_stage['$project'].update({
+                "_id": 0,
+                f"mean{statVars[i]}": 1,
+                f"stdDev{statVars[i]}": 1
+                })
+        print(grouping_stage['$group'])
+        print(projection_stage['$project'])  
+    return
+
+
+# Match filters
 def create_date_filter(test_config: Configuration, res: defaultdict):
     """
     :param test_config: Configuration that describes the desired query
     :param res: the match stage to add the date filter to
     :return: the match stage with the date filter added in
     """
+
+    res["$match"].update({"$and": [{"date": {"$gte": test_config.start}}, {"date": {"$lte": test_config.end}}]})
     return dict(res)
 
 
