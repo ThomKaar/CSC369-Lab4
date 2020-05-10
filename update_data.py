@@ -54,13 +54,14 @@ def update_collections(db: Database, refresh: bool) -> None:
     if COLL_COVID not in collections or refresh:
         if refresh:
             db[COLL_COVID].drop()
-        covid_data = get_covid_data()
+        covid_data: JSON = get_covid_data()
         add_collection(db, COLL_COVID, covid_data)
 
     if COLL_STATES not in collections or refresh:
         if refresh:
             db[COLL_STATES].drop()
-        states_data = get_states_data()
+        states_data: JSON = get_states_data()
+        # TODO: add death and positive (cumulatives)
         add_collection(db, COLL_STATES, states_data)
         fix_states_data(db, COLL_STATES)
 
