@@ -56,6 +56,7 @@ def update_collections(db: Database, refresh: bool) -> None:
             db[COLL_COVID].drop()
         covid_data: JSON = get_covid_data()
         add_collection(db, COLL_COVID, covid_data)
+        fix_covid_data(db, COLL_COVID)
 
     if COLL_STATES not in collections or refresh:
         if refresh:
@@ -76,6 +77,7 @@ def get_covid_data() -> JSON:
     return json.loads(content)
 
 
+# TODO: fix so that properties match spec: "tests", "testIncrease", "hospitalization", "hospitalizationIncrease"
 def get_states_data() -> JSON:
     """
     :return: current COVID-19 by county data JSON
@@ -96,6 +98,11 @@ def add_collection(db: Database, collection: str, data: JSON) -> None:
     db[collection].insert_many(data)
 
 
+def fix_covid_data(db, COLL_COVID):
+    pass
+
+
+# TODO: Calculate deathIncrease and positiveIncrease
 def fix_states_data(db, collection):
     """
     Converts dates in a database collection from YYYY-MM-DD to YYYYMMDD
