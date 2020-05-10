@@ -32,7 +32,10 @@ def main():
 
     page = get_header()
     for n, t in enumerate(result):
-        q = Query(test_config.analysis[n]['task'], test_config.analysis[n]['output'], result[t][0])
+        q = Query(
+            task=test_config.analysis[n]['task'],
+            output=test_config.analysis[n]['output'],
+            data=result[t][0])
         if 'table' in q.output:
             row = q.output['table'].get('row')
             col = q.output['table'].get('column')

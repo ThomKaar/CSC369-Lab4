@@ -121,8 +121,8 @@ def fix_states_data(db, collection):
                         }
                     }
                 },
-                "positive": {"$toInt": "$cases"},
-                "death": {"$toInt": "$deaths"}
+                "positiveIncrease": {"$toInt": "$cases"},
+                "deathIncrease": {"$toInt": "$deaths"}
             }
         },
         {
