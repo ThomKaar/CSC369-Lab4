@@ -281,7 +281,8 @@ def create_date_filter(test_config: Configuration, res: defaultdict):
     :return: the match stage with the date filter added in
     """
 
-    res["$match"].update({"$and": [{"date": {"$gte": test_config.start}}, {"date": {"$lte": test_config.end}}]})
+    if not (test_config.start == test_config.end == 0):
+        res["$match"].update({"$and": [{"date": {"$gte": test_config.start}}, {"date": {"$lte": test_config.end}}]})
     return dict(res)
 
 
