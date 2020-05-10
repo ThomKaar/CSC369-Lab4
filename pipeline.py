@@ -118,7 +118,7 @@ def create_grouping_stage(test_config):
             test_config.collection == 'covid' and test_config.aggregation == 'state'):
         grouping_stage['$group'].update(
             {
-                "_id": f"${test_config.aggregation}"
+                "_id": f"$date"
             }
         )
     else:
@@ -175,15 +175,33 @@ def task_track(test_config, query, grouping_stage, unwind_regroup_stage, project
     elif (test_config.aggregation == 'state' and test_config.collection == 'covid') or (
             test_config.aggregation == 'county' and test_config.collection == 'states'):
         grouping_stage['$group'].update({
-            "_id": f"${test_config.aggregation}",
-            "data": {"$push": {
-                "date": "$date",
+            "daily_data": {"$push": {
+                f"{test_config.aggregation}": f"${test_config.aggregation}",
                 var_to_track: f"${var_to_track}"}}})
+
+        unwind_regroup_stage.append({"$sort": {"_id": 1}})
+
+        unwind_regroup_stage.append({
+            "$group": {
+                "_id": test_config.counties,
+                "data": {
+                    "$push": {
+                        "date": "$_id",
+                        "daily_data": "$daily_data"
+                    }}}})
 
         projection_stage['$project'].update({
             "_id": 0,
-            f"{test_config.aggregation}": "$_id",
             "data": 1})
+
+        if test_config.aggregation == 'county':
+            projection_stage['$project'].update({
+                "counties": test_config.counties
+            })
+        else:
+            projection_stage['$project'].update({
+                "states": test_config.target
+            })
 
     else:
         print("Trouble")

@@ -17,12 +17,13 @@ class Configuration:
         self.output_file: Union[str, None] = config_data.get('Output')
 
         temp_target = config_data.get('target')
-        # sets self.target to None if not DNE, else makes sure target is an array
+        # sets self.target to None if DNE, else makes sure target is an array
         self.target: Union[None, List[str]] = [temp_target] if (type(temp_target) == str) else temp_target
 
         temp_counties = config_data.get('counties')
-        # sets self.counties to None if not DNE, else makes sure target is an array
+        # sets self.counties to None if DNE, else makes sure target is an array
         self.counties: List[str] = temp_counties or [temp_counties] if (type(temp_counties) == str) else temp_counties
+        self.counties = None if self.collection == 'covid' else self.counties
 
         self.check_validity()
         self.set_start_end(config_data)
