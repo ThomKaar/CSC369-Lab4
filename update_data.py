@@ -1,5 +1,6 @@
 import csv
 import json
+from collections import defaultdict
 from io import StringIO
 from typing import List, Dict
 
@@ -43,6 +44,19 @@ def get_db_connection(cred_file: str) -> Database:
     return client[auth_data['db']]
 
 
+def add_cumulative_properties(states_data):
+    states_data.sort(key=lambda datum: datum['date'])
+    states_data.sort(key=lambda datum: datum['county'])
+    prev_deaths = defaultdict(int)
+    prev_positives = defaultdict(int)
+    for datum in states_data:
+        datum.update({'deathIncrease': int(datum['deaths']) - prev_deaths[datum['county']]})
+        datum.update({'positiveIncrease': int(datum['cases']) - prev_positives[datum['county']]})
+        prev_deaths[datum['county']] = int(datum['deaths'])
+        prev_positives[datum['county']] = int(datum['cases'])
+    print(states_data)
+
+
 def update_collections(db: Database, refresh: bool) -> None:
     """
     If covid or states collections don't exist in db, downloads data, creates collections, and inserts data
@@ -62,7 +76,7 @@ def update_collections(db: Database, refresh: bool) -> None:
         if refresh:
             db[COLL_STATES].drop()
         states_data: JSON = get_states_data()
-        # TODO: add death and positive (cumulatives)
+        add_cumulative_properties(states_data)
         add_collection(db, COLL_STATES, states_data)
         fix_states_data(db, COLL_STATES)
 
@@ -122,8 +136,8 @@ def fix_states_data(db, collection):
                         }
                     }
                 },
-                "positiveIncrease": {"$toInt": "$cases"},
-                "deathIncrease": {"$toInt": "$deaths"}
+                "positive": {"$toInt": "$cases"},
+                "death": {"$toInt": "$deaths"}
             }
         },
         {
