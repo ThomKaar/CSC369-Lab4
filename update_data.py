@@ -1,5 +1,6 @@
 import csv
 import json
+from collections import defaultdict
 from io import StringIO
 from typing import List, Dict
 
@@ -43,6 +44,19 @@ def get_db_connection(cred_file: str) -> Database:
     return client[auth_data['db']]
 
 
+def add_cumulative_properties(states_data):
+    states_data.sort(key=lambda datum: datum['date'])
+    states_data.sort(key=lambda datum: datum['county'])
+    prev_deaths = defaultdict(int)
+    prev_positives = defaultdict(int)
+    for datum in states_data:
+        datum.update({'deathIncrease': int(datum['deaths']) - prev_deaths[datum['county']]})
+        datum.update({'positiveIncrease': int(datum['cases']) - prev_positives[datum['county']]})
+        prev_deaths[datum['county']] = int(datum['deaths'])
+        prev_positives[datum['county']] = int(datum['cases'])
+    print(states_data)
+
+
 def update_collections(db: Database, refresh: bool) -> None:
     """
     If covid or states collections don't exist in db, downloads data, creates collections, and inserts data
@@ -54,13 +68,15 @@ def update_collections(db: Database, refresh: bool) -> None:
     if COLL_COVID not in collections or refresh:
         if refresh:
             db[COLL_COVID].drop()
-        covid_data = get_covid_data()
+        covid_data: JSON = get_covid_data()
         add_collection(db, COLL_COVID, covid_data)
+        fix_covid_data(db, COLL_COVID)
 
     if COLL_STATES not in collections or refresh:
         if refresh:
             db[COLL_STATES].drop()
-        states_data = get_states_data()
+        states_data: JSON = get_states_data()
+        add_cumulative_properties(states_data)
         add_collection(db, COLL_STATES, states_data)
         fix_states_data(db, COLL_STATES)
 
@@ -75,6 +91,7 @@ def get_covid_data() -> JSON:
     return json.loads(content)
 
 
+# TODO: fix so that properties match spec: "tests", "testIncrease", "hospitalization", "hospitalizationIncrease"
 def get_states_data() -> JSON:
     """
     :return: current COVID-19 by county data JSON
@@ -95,6 +112,11 @@ def add_collection(db: Database, collection: str, data: JSON) -> None:
     db[collection].insert_many(data)
 
 
+def fix_covid_data(db, COLL_COVID):
+    pass
+
+
+# TODO: Calculate deathIncrease and positiveIncrease
 def fix_states_data(db, collection):
     """
     Converts dates in a database collection from YYYY-MM-DD to YYYYMMDD
@@ -114,8 +136,8 @@ def fix_states_data(db, collection):
                         }
                     }
                 },
-                "cases": {"$toInt": "$cases"},
-                "deaths": {"$toInt": "$deaths"}
+                "positive": {"$toInt": "$cases"},
+                "death": {"$toInt": "$deaths"}
             }
         },
         {
