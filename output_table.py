@@ -45,8 +45,10 @@ def create_table_headers(query: Query, rows: str, cols: str) -> str:
                 data_col_header += f'<th>{target[0]}: ' + ', '.join(counties)
             else:
                 data_col_header += f'<th>{aggregation_level}: ' + ', '.join(target)
+        elif states:
+            data_col_header += '<th>' + f"{', '.join(states)}"
         else:
-            data_col_header += aggregation_level
+            data_col_header += '<th>' + aggregation_level
         data_col_header += '</th></tr>'
     elif states:
         num_data_cols = len(states)
@@ -59,7 +61,13 @@ def create_table_headers(query: Query, rows: str, cols: str) -> str:
             data_col_header += f'<th>{county}</th>'
         data_col_header += '</tr>'
 
-    header_row += f'<th colspan={num_data_cols}>{HEADERS[query.task["track"]]}</th></tr>'
+    if query.task.get('track'):
+        data_header = HEADERS[query.task["track"]]
+    else:
+        n = HEADERS[query.task['ratio']['numerator']]
+        d = HEADERS[query.task['ratio']['denominator']]
+        data_header = n + ' to ' + d + " Ratio"
+    header_row += f'<th colspan={num_data_cols}>{data_header}</th></tr>'
     header_row += '<tr><th></th>'
     header_row += data_col_header
 
@@ -73,10 +81,11 @@ def create_table_rows(query: Query, rows, cols) -> str:
         if cols == 'time':
             table_rows += date_to_str(datum['date'])
         table_rows += "</td>"
-        if 'track' in query.task:
+        if 'track' in query.task or 'ratio' in query.task:
+            var = query.task['track'] if 'track' in query.task else 'ratio'
             if query.data.get('aggregation') and (query.data['aggregation'] in ['usa', 'fiftyStates'] or (
                     query.data['aggregation'] == 'state' and query.data.get('counties'))):
-                table_rows += '<td>' + str(datum[f"{query.task['track']}"] or 0) + '</td>'
+                table_rows += '<td>' + str(datum[f"{var}"] or 0) + '</td>'
             else:
                 if query.data.get('counties'):
                     for county in query.data['counties']:
@@ -84,7 +93,7 @@ def create_table_rows(query: Query, rows, cols) -> str:
                         for daily_datum in datum['daily_data']:
                             if daily_datum['county'] == county:
                                 found = True
-                                table_rows += '<td>' + str(daily_datum[f"{query.task['track']}" or 0]) + '</td>'
+                                table_rows += '<td>' + str(daily_datum[f"{var}" or 0]) + '</td>'
                         if not found:
                             table_rows += '<td>' + str(0) + '</td>'
                 if query.data.get('states'):
@@ -93,7 +102,7 @@ def create_table_rows(query: Query, rows, cols) -> str:
                         for daily_datum in datum['daily_data']:
                             if daily_datum['state'] == state:
                                 found = True
-                                table_rows += '<td>' + str(daily_datum[f"{query.task['track']}"] or 0) + '</td>'
+                                table_rows += '<td>' + str(daily_datum[f"{var}"] or 0) + '</td>'
                         if not found:
                             table_rows += '<td>' + str(0) + '</td>'
 
