@@ -4,7 +4,7 @@ from pprint import pprint
 from config import Configuration
 from output_graph import create_graph
 from output_html import get_header, Query
-from output_table import create_table
+from output_table import get_table
 from pipeline import create_pipeline
 from update_data import get_db_connection, update_collections
 
@@ -41,16 +41,16 @@ def main():
             task=test_config.analysis[n]['task'],
             output=test_config.analysis[n]['output'],
             data=result[t][0])
-        if ('track' in q.task or 'ratio' in q.task) and 'table' in q.output:
-            row = q.output['table'].get('row')
-            col = q.output['table'].get('column')
-            title = q.output['table'].get('title')
-            page += create_table(q, row, col, title)
-        elif ('track' in q.task or 'ratio' in q.task) and 'graph' in q.output:
-            graph = create_graph(q)
-        else:
-            with open(test_config.output_file, 'w') as f:
-                pprint(result, f)
+
+        for key in q.output:
+            if ('track' in q.task or 'ratio' in q.task) and key == 'table':
+                page += get_table(q)
+            if ('track' in q.task or 'ratio' in q.task) and key == 'graph':
+                graph = create_graph(q)
+                # page += graph or something like that
+            else:
+                with open(test_config.output_file, 'w') as f:
+                    pprint(result, f)
 
     with open(f'my.html', 'w') as f:
         print(page, file=f)
