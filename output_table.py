@@ -20,7 +20,9 @@ def get_table(q: Query) -> str:
     title = q.output['table'].get('title')
 
     df = get_df(q)
-    # TODO: add title to dataframe
+
+    if row == 'time':
+        df = df.transpose()
     return df.to_html().replace('\n', '')
 # def date_to_str(date: int) -> str:
 #     year = date // 10000
