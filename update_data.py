@@ -54,7 +54,6 @@ def add_cumulative_properties(states_data):
         datum.update({'positiveIncrease': int(datum['cases']) - prev_positives[datum['county']]})
         prev_deaths[datum['county']] = int(datum['deaths'])
         prev_positives[datum['county']] = int(datum['cases'])
-    print(states_data)
 
 
 def update_collections(db: Database, refresh: bool) -> None:

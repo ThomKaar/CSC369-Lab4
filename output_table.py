@@ -18,9 +18,10 @@ HEADERS = {
     "testIncrease": "Daily Tests",
     "time": "Date",
     "hospitalization": "Cumulative Hospitalized",
-    "hospitalizationIncrease": "Daily Hospitalized"
+    "hospitalizationIncrease": "Daily Hospitalized",
+    "avg": "Mean",
+    "stdDev": "St. Dev"
 }
-
 
 class Query(NamedTuple):
     task: dict
@@ -28,16 +29,19 @@ class Query(NamedTuple):
     data: dict
 
 
-def create_table_headers(query: Query, rows: str, cols: str) -> str:
+def create_table_headers(query: Query, rows: str, cols: str) -> str:    
+    if query.task.get('stats') is not None:
+        return create_stat_table_headers(query, rows, cols)
+ 
     aggregation_level = query.data.get('aggregation')
     target = query.data.get('target')
     states = query.data.get('states')
-    counties = query.data.get('counties')
-
+    counties = query.data.get('counties') 
     num_data_cols = 1
     header_row = "<tr>"
     header_row += f'<th>{HEADERS[cols]}</th>'
 
+   
     data_col_header = ''
     if aggregation_level:
         if target:
@@ -60,7 +64,6 @@ def create_table_headers(query: Query, rows: str, cols: str) -> str:
         for county in counties:
             data_col_header += f'<th>{county}</th>'
         data_col_header += '</tr>'
-
     if query.task.get('track'):
         data_header = HEADERS[query.task["track"]]
     else:
@@ -70,12 +73,13 @@ def create_table_headers(query: Query, rows: str, cols: str) -> str:
     header_row += f'<th colspan={num_data_cols}>{data_header}</th></tr>'
     header_row += '<tr><th></th>'
     header_row += data_col_header
-
     return header_row
-
 
 def create_table_rows(query: Query, rows, cols) -> str:
     table_rows = ''
+    if query.task.get('stats') is not None:
+        table_rows = create_stat_table_rows(query, rows, cols)
+        return table_rows
     for datum in query.data['data']:
         table_rows += f"<tr><td>"
         if cols == 'time':
@@ -117,3 +121,44 @@ def create_table(query: Query, row: str = None, col: str = None, title: str = No
     res = html_text + "<table>" + create_table_headers(query, row, col) + create_table_rows(query, row,
         col) + "</table>"
     return res
+
+
+def create_stat_table_rows(query: Query, rows, cols) -> str:
+    table_rows = '';
+    data = query.data.get('data')
+    stats = query.task.get('stats')
+    aggregation = query.task.get('aggregation')
+    for e in data:
+        table_row = ''
+        table_row += f'<td>{e.get(aggregation)}</td>\n'
+        for stat in stats: 
+            avgStat = "mean" + str(stat)
+            stdDevStat = "stdDev" + str(stat)
+            table_row += f'<td>{e.get(avgStat)}</td>'
+            table_row += f'<td>{e.get(stdDevStat)}</td>\n'
+        table_rows += table_row
+    return table_rows
+
+
+def create_stat_table_headers(query: Query, rows: str, cols: str) -> str:
+    header_rows = "<tr>"
+    header_end = "</tr>"
+    data = query.data.get('data')
+    stats = query.task.get('stats')
+    cols = []
+    cols.append('avg')
+    cols.append('stdDev')
+    aggregation = query.task.get('aggregation');
+    header_rows += f'<th> {aggregation}</th>'
+    for stat in stats:
+        header_row = ''
+         
+        header_row += f"<th>{HEADERS[cols[0]]} "
+        header_row += f"{HEADERS[stat]}</th>"
+
+        header_row += f"<th> {HEADERS[stat]} " 
+        header_row += f"{HEADERS[cols[1]]}</th>"
+        
+        header_rows += header_row
+    header_rows += header_end
+    return header_rows

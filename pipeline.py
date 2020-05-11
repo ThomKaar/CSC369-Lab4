@@ -84,12 +84,17 @@ def create_facet_stage(test_config: Configuration):
                 unwind_regroup_stage,
                 projection_stage)
 
-        else:
-            # TODO: Task - Stats
+        elif "stats" in query['task']:
             projection_stage = {
                 "$project": query['task']['stats']
             }
-            pass
+            
+            unwind_regroup_stage = task_stats(
+                test_config,
+                query,
+                grouping_stage,
+                unwind_regroup_stage,
+                projection_stage)
 
         if grouping_stage:
             res["$facet"][str(i)].append(dict(grouping_stage))
@@ -120,6 +125,12 @@ def create_grouping_stage(test_config):
                 "_id": f"$date"
             }
         )
+    elif test_config.collection == 'covid' and test_config.aggregation == 'country_wide':
+        grouping_stage = {
+            "$group": {
+                "_id": 1,
+            }
+        }
     else:
         print("something went wrong")
     return grouping_stage
@@ -313,6 +324,48 @@ def task_ratio(test_config, query, grouping_stage, unwind_regroup_stage, project
     return unwind_regroup_stage
 
 
+
+# Task stats
+def task_stats(test_config, query, grouping_stage, unwind_regroup_stage, projection_stage):
+    statVars = []
+    for i in range(len(projection_stage["$project"])):
+        statVars.append(projection_stage["$project"][i])
+    projection_stage["$project"] = {}
+    if test_config.aggregation in ['usa', "fiftyStates"] or (
+            test_config.collection == 'states' and test_config.aggregation == 'state'):
+        
+        for i in range(len(statVars)):
+           grouping_stage['$group'].update({
+                f"mean{statVars[i]}": {"$avg": f"${statVars[i]}"},
+                f"stdDev{statVars[i]}": {"$stdDevPop": f"${statVars[i]}"}
+                })
+           projection_stage['$project'].update({
+                "_id": 0,
+                f"mean{statVars[i]}": 1,
+                f"stdDev{statVars[i]}": 1
+                })
+
+        #perform aggregation for states
+    elif (test_config.collection == 'covid' and test_config.aggregation == 'state') or (
+            test_config.collection == 'states' and test_config.aggregation == 'county'):    
+        grouping_stage['$group'].update({
+           "_id": f'{test_config.aggregation}' 
+        })
+        for i in range(len(statVars)):
+            grouping_stage['$group'].update({
+                "_id": f"${test_config.aggregation}",
+                f"mean{statVars[i]}": {"$avg": f"${statVars[i]}"},
+                f"stdDev{statVars[i]}": {"$stdDevPop": f"${statVars[i]}"}
+                })
+            projection_stage['$project'].update({
+                "_id": 0,
+                f"{test_config.aggregation}": f"$_id",
+                f"mean{statVars[i]}": 1,
+                f"stdDev{statVars[i]}": 1
+                })
+    return unwind_regroup_stage
+
+
 # Match filters
 def create_date_filter(test_config: Configuration, res: defaultdict):
     """
@@ -345,3 +398,14 @@ def create_location_filter(test_config: Configuration, res: defaultdict):
             res["$match"].update({"county": {"$in": test_config.counties}})
 
     return res
+
+
+# this is only for the covid collection
+def create_country_wide_aggregation(test_config: Configuration, res: defaultdict):
+    """
+    :param test_config: Configuration that describes the desired query
+    :param res: the group stage to add the country filter
+    :return: the group stage with the country aggregation
+    """
+    res = {"$group": {"_id": 1, "targetSum": {"$sum": test_config.target}}} 
+    return dict(res)
