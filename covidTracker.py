@@ -29,13 +29,19 @@ def main():
         print(pipeline, file=f)
 
     result = collection.aggregate(pipeline).next()
-
     page = get_header()
     for n, t in enumerate(result):
-        q = Query(
-            task=test_config.analysis[n]['task'],
-            output=test_config.analysis[n]['output'],
-            data=result[t][0])
+        if test_config.analysis[n]['task'].get('stats') is not None:
+            test_config.analysis[n]['task'].update({"aggregation": test_config.aggregation})
+            q = Query(
+                task=test_config.analysis[n]['task'],
+                output=test_config.analysis[n]['output'],
+                data={"data": result[t]})
+        else:
+            q = Query(
+                task=test_config.analysis[n]['task'],
+                output=test_config.analysis[n]['output'],
+                data=result[t][0])
         if 'table' in q.output:
             row = q.output['table'].get('row')
             col = q.output['table'].get('column')
