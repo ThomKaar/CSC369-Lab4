@@ -149,15 +149,15 @@ def create_stat_table_headers(query: Query, rows: str, cols: str) -> str:
     cols = []
     cols.append('avg')
     cols.append('stdDev')
-
-    header_row = ''
+    aggregation = query.task.get('aggregation');
+    header_rows += f'<th> {aggregation}</th>'
     for stat in stats:
         header_row = ''
          
-        header_row += f"<th>{HEADERS[cols[0]]}"
+        header_row += f"<th>{HEADERS[cols[0]]} "
         header_row += f"{HEADERS[stat]}</th>"
 
-        header_row += f"<th> {HEADERS[stat]}" 
+        header_row += f"<th> {HEADERS[stat]} " 
         header_row += f"{HEADERS[cols[1]]}</th>"
         
         header_rows += header_row

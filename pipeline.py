@@ -341,7 +341,6 @@ def task_stats(test_config, query, grouping_stage, unwind_regroup_stage, project
                 f"mean{statVars[i]}": 1,
                 f"stdDev{statVars[i]}": 1
                 })
-                
     return unwind_regroup_stage
 
 
