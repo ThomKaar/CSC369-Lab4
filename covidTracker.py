@@ -1,4 +1,5 @@
 import argparse
+from pprint import pprint
 
 from config import Configuration
 from output_html import get_header
@@ -36,14 +37,17 @@ def main():
             task=test_config.analysis[n]['task'],
             output=test_config.analysis[n]['output'],
             data=result[t][0])
-        if 'table' in q.output:
+        if ('track' in q.task or 'ratio' in q.task) and 'table' in q.output:
             row = q.output['table'].get('row')
             col = q.output['table'].get('column')
             title = q.output['table'].get('title')
             page += create_table(q, row, col, title)
 
-    with open(f'my.html', 'w') as f:
-        print(page, file=f)
+            with open(f'my.html', 'w') as f:
+                print(page, file=f)
+        else:
+            with open(test_config.output_file, 'w') as f:
+                pprint(result, f)
 
     print("done")
 

@@ -64,7 +64,6 @@ def create_facet_stage(test_config: Configuration):
     sort = create_sort_stage(test_config)
 
     for i, query in enumerate(test_config.analysis):
-
         grouping_stage = create_grouping_stage(test_config)
         unwind_regroup_stage = []
         projection_stage = defaultdict(dict)
@@ -220,8 +219,8 @@ def task_ratio(test_config, query, grouping_stage, unwind_regroup_stage, project
             f"{denominator_var}": {"$sum": f"${denominator_var}"}
         })
 
-        unwind_regroup_stage.append({
-            '$addFields': {"ratio": {
+        unwind_regroup_stage += [
+            {'$addFields': {"ratio": {
                 "$cond": {
                     "if": {"$gt": [f'${denominator_var}', 0]},
                     "then": {
@@ -230,16 +229,14 @@ def task_ratio(test_config, query, grouping_stage, unwind_regroup_stage, project
                             f'${denominator_var}'
                         ]
                     },
-                    "else": 0}}}})
-
-        unwind_regroup_stage.append(
+                    "else": 0}}}},
             {'$sort': {"_id": 1}},
             {'$group': {
                 "_id": test_config.aggregation,
                 "data": {
                     "$push": {
                         "date": "$_id",
-                        "ratio": "$ratio"}}}})
+                        "ratio": "$ratio"}}}}]
 
         projection_stage['$project'].update({
             "_id": 0,
@@ -249,7 +246,7 @@ def task_ratio(test_config, query, grouping_stage, unwind_regroup_stage, project
 
         if test_config.target:
             projection_stage['$project'].update({
-                "target": test_config.target
+                "states": test_config.target
             })
 
         if test_config.collection == 'states' and test_config.counties:
@@ -261,29 +258,54 @@ def task_ratio(test_config, query, grouping_stage, unwind_regroup_stage, project
             test_config.collection == 'states' and test_config.aggregation == 'county'):
         grouping_stage["$group"].update({
             "data": {"$push": {
-                "date": "$date",
-                f'{numerator_var}': {"$sum": f'${numerator_var}'},
-                f'{denominator_var}': {"$sum": f'${denominator_var}'}}}})
+                f"{test_config.aggregation}": f"${test_config.aggregation}",
+                f'{numerator_var}': f'${numerator_var}',
+                f'{denominator_var}': f'${denominator_var}'}}})
 
-        unwind_regroup_stage.append(
-            {"$unwind": "$data"},
-            {"$addFields": {"ratio": {"$cond": {
-                "if": {"$gt": [f'$data.{denominator_var}', 0]},
-                "then": {
-                    "$divide": [
-                        f'$data.{numerator_var}',
-                        f'$data.{denominator_var}']},
-                "else": 0}}}},
-            {"$group": {
-                "_id": f"$_id",
-                "data": {"$push": {
-                    "date": "$data.date",
-                    "ratio": "$ratio"}}}})
+        unwind_regroup_stage += [{
+            "$unwind": "$data"}, {
+            "$addFields": {
+                "data.ratio": {
+                    "$cond": {
+                        "if": {
+                            "$and": [
+                                {"$gt": [f'$data.{denominator_var}', 0]},
+                                {"$gt": [f'$data.{numerator_var}', 0]}]},
+                        "then": {
+                            "$divide": [
+                                f'$data.{numerator_var}',
+                                f'$data.{denominator_var}']},
+                        "else": 0}}}}, {
+            "$group": {
+                "_id": "$_id",
+                "daily_data": {
+                    "$push": "$data"}}}, {
+            "$project": {
+                "_id": 0,
+                f"date": "$_id",
+                "daily_data.ratio": 1,
+                f"daily_data.{test_config.aggregation}": 1}}, {
+            "$sort": {"date": 1}}, {
+            "$group": {
+                "_id": test_config.counties if test_config.aggregation == 'county' else test_config.target,
+                "data": {
+                    "$push": {
+                        "daily_data": "$daily_data",
+                        "date": "$date"}}}}]
 
         projection_stage['$project'].update({
             "_id": 0,
-            f"{test_config.aggregation}": "$_id",
             "data": 1})
+
+        if test_config.aggregation == 'county':
+            projection_stage['$project'].update({
+                "counties": "$_id"
+            })
+
+        else:
+            projection_stage['$project'].update({
+                "states": "$_id"
+            })
 
     else:
         print("Something went wrong here")
