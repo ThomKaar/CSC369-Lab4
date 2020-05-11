@@ -2,8 +2,9 @@ import argparse
 from pprint import pprint
 
 from config import Configuration
-from output_html import get_header
-from output_table import create_table, Query
+from output_graph import create_graph
+from output_html import get_header, Query
+from output_table import create_table
 from pipeline import create_pipeline
 from update_data import get_db_connection, update_collections
 
@@ -31,6 +32,9 @@ def main():
 
     result = collection.aggregate(pipeline).next()
 
+    with open("./out/track_covid_usa", 'w') as f:
+        pprint(result, f)
+
     page = get_header()
     for n, t in enumerate(result):
         q = Query(
@@ -42,12 +46,14 @@ def main():
             col = q.output['table'].get('column')
             title = q.output['table'].get('title')
             page += create_table(q, row, col, title)
-
-            with open(f'my.html', 'w') as f:
-                print(page, file=f)
+        elif ('track' in q.task or 'ratio' in q.task) and 'graph' in q.output:
+            graph = create_graph(q)
         else:
             with open(test_config.output_file, 'w') as f:
                 pprint(result, f)
+
+    with open(f'my.html', 'w') as f:
+        print(page, file=f)
 
     print("done")
 

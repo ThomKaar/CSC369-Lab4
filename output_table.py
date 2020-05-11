@@ -1,5 +1,6 @@
 import datetime
-from typing import NamedTuple
+
+from output_html import Query
 
 
 def date_to_str(date: int) -> str:
@@ -20,12 +21,6 @@ HEADERS = {
     "hospitalization": "Cumulative Hospitalized",
     "hospitalizationIncrease": "Daily Hospitalized"
 }
-
-
-class Query(NamedTuple):
-    task: dict
-    output: dict
-    data: dict
 
 
 def create_table_headers(query: Query, rows: str, cols: str) -> str:

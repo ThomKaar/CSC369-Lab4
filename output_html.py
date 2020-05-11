@@ -1,3 +1,6 @@
+from typing import NamedTuple
+
+
 def get_css():
     return "<style>" \
            "th, td {" \
@@ -24,3 +27,9 @@ def get_header():
 def creat_html_page():
     page = ''
     page += get_header()
+
+
+class Query(NamedTuple):
+    task: dict
+    output: dict
+    data: dict
