@@ -46,8 +46,8 @@ def create_stat_table_rows(query: Query) -> str:
             avgStat = "mean" + str(stat)
             stdDevStat = "stdDev" + str(stat)
             table_row += f'<td>{e.get(avgStat)}</td>'
-            table_row += f'<td>{e.get(stdDevStat)}</td></tr>\n'
-        table_rows += table_row
+            table_row += f'<td>{e.get(stdDevStat)}</td>\n'
+        table_rows += table_row + '</tr>'
     return table_rows
 
 
