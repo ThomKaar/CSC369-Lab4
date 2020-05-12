@@ -1,5 +1,8 @@
+# Thomas Karr
+# Wesley Benica
+# Lab 4 - CSC369 - Spring 2020
+
 import argparse
-from pprint import pprint
 
 from config import Configuration
 from output_graph import create_graph
@@ -34,7 +37,6 @@ def main():
 
     page = get_header()
     for n, t in enumerate(result):
-
         if test_config.analysis[n]['task'].get('stats') is not None:
             test_config.analysis[n]['task'].update({"aggregation": test_config.aggregation})
             q = Query(
@@ -55,11 +57,8 @@ def main():
                 create_graph(q, n)
                 page += f'<img src="graph{n}.png"></img>'
 
-    with open('my.html', 'w') as f:
-        f.write(page)
-
     with open(test_config.output_file, 'w') as f:
-        pprint(result, f)
+        f.write(page)
 
     print("done")
 

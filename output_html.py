@@ -1,3 +1,7 @@
+# Thomas Karr
+# Wesley Benica
+# Lab 4 - CSC369 - Spring 2020
+
 from typing import NamedTuple
 
 

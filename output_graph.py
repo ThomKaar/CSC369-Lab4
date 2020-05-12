@@ -1,3 +1,7 @@
+# Thomas Karr
+# Wesley Benica
+# Lab 4 - CSC369 - Spring 2020
+
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator

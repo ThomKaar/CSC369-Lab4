@@ -1,3 +1,7 @@
+# Thomas Karr
+# Wesley Benica
+# Lab 4 - CSC369 - Spring 2020
+
 import json
 from datetime import datetime, timedelta
 from typing import List, Dict, Union
