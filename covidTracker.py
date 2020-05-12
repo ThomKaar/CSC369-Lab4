@@ -3,7 +3,7 @@ from pprint import pprint
 
 from config import Configuration
 from output_graph import create_graph
-from output_html import get_header, Query
+from output_html import get_header
 from output_table import get_table, create_table, Query
 from pipeline import create_pipeline
 from update_data import get_db_connection, update_collections
@@ -41,17 +41,12 @@ def main():
                 task=test_config.analysis[n]['task'],
                 output=test_config.analysis[n]['output'],
                 data={"data": result[t]})
+            page += create_table(q)
         else:
             q = Query(
                 task=test_config.analysis[n]['task'],
                 output=test_config.analysis[n]['output'],
                 data=result[t][0])
-
-        if ('track' in q.task or 'ratio' in q.task) and 'table' in q.output:
-            row = q.output['table'].get('row')
-            col = q.output['table'].get('column')
-            title = q.output['table'].get('title')
-            page += create_table(q, row, col, title)
 
         for key in q.output:
             if ('track' in q.task or 'ratio' in q.task) and key == 'table':
@@ -59,9 +54,12 @@ def main():
             if ('track' in q.task or 'ratio' in q.task) and key == 'graph':
                 graph = create_graph(q)
                 # page += graph or something like that
-            else:
-                with open(test_config.output_file, 'w') as f:
-                    pprint(result, f)
+
+    with open('my.html', 'w') as f:
+        f.write(page)
+
+    with open(test_config.output_file, 'w') as f:
+        pprint(result, f)
 
     print("done")
 

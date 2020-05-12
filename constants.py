@@ -7,5 +7,7 @@ HEADERS = {
     "testIncrease": "Daily Tests",
     "time": "Date",
     "hospitalization": "Total Hospitalized",
-    "hospitalizationIncrease": "Daily Hospitalized"
+    "hospitalizationIncrease": "Daily Hospitalized",
+    "avg": "Mean",
+    "stdDev": "St. Dev"
 }
