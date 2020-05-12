@@ -52,8 +52,8 @@ def main():
             if ('track' in q.task or 'ratio' in q.task) and key == 'table':
                 page += get_table(q)
             if ('track' in q.task or 'ratio' in q.task) and key == 'graph':
-                graph = create_graph(q)
-                # page += graph or something like that
+                create_graph(q, n)
+                page += f'<img src="graph{n}.png"></img>'
 
     with open('my.html', 'w') as f:
         f.write(page)

@@ -7,7 +7,7 @@ from dataframes import get_df
 from output_html import Query
 
 
-def create_graph(q: Query):
+def create_graph(q: Query, n: int):
     graph_type = q.output['graph']['type']
     legend = q.output['graph'].get('legend') == 'on'
     combo = q.output['graph']['combo']
@@ -51,5 +51,5 @@ def create_graph(q: Query):
     if title:
         ax.set_title(title)
 
-    plt.show()
-    plt.savefig('graph.png')
+    # plt.show()
+    plt.savefig(f'graph{n}.png')
