@@ -55,5 +55,6 @@ def create_graph(q: Query):
     plt.savefig('graph.png')
     return create_graph_html('graph.png')
 
-def create_graph_html(name: str) -> str:
-    return 
+def create_graph_html(graph_name: str) -> str:
+    page = f'<img src="{graph_name}">'
+    return page
