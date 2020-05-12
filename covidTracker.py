@@ -53,7 +53,7 @@ def main():
                 page += get_table(q)
             if ('track' in q.task or 'ratio' in q.task) and key == 'graph':
                 graph = create_graph(q)
-                # page += graph or something like that
+                page += create_graph(q)
 
     with open('my.html', 'w') as f:
         f.write(page)

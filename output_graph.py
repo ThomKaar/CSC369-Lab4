@@ -53,3 +53,7 @@ def create_graph(q: Query):
 
     plt.show()
     plt.savefig('graph.png')
+    return create_graph_html('graph.png')
+
+def create_graph_html(name: str) -> str:
+    return 
