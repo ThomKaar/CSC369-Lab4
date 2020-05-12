@@ -7,12 +7,17 @@ from output_html import Query
 
 def get_table(q: Query) -> str:
     row = q.output['table'].get('row')
+    title = q.output['table'].get('title')
+
+    html_text = ''
+    if title:
+        html_text += f"<h2>{title}</h2>"
 
     df = get_df(q)
 
     if row == 'time':
         df = df.transpose()
-    return df.to_html().replace('\n', '')
+    return html_text + df.to_html().replace('\n', '')
 
 
 def date_to_str(date: int) -> str:

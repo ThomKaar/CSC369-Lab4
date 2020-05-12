@@ -14,7 +14,7 @@ class Configuration:
         self.start: int = 0
         self.end: int = 0
         self.analysis: List[Dict] = config_data['analysis']
-        self.output_file: str = config_data.get('Output') or 'out.txt'
+        self.output_file: str = config_data.get('Output') or config_file
 
         temp_target = config_data.get('target')
         # sets self.target to None if DNE, else makes sure target is an array
