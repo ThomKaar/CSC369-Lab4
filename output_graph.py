@@ -17,12 +17,14 @@ def create_graph(q: Query):
 
     if graph_type == 'bar':
         grapher = ax.bar
-        labels = np.arange(len(df.index))
-        width = 1
+        group_width = .75
+        col_width = group_width / len(df.columns)
+        x = np.arange(len(df.index))
         for i, col in enumerate(df.columns):
-            offset = i * width / len(df.columns)
-            grapher(labels - width / 2 + offset, height=df[col], width=width / len(df.columns), label=col)
-        ax.set_xticklabels(df.index)
+            grapher(x - 0.5 + i * col_width + col_width / 2, df[col], width=col_width, label=col)
+        plt.xticks(x, df.index)
+        ax.xaxis.set_major_locator(MultipleLocator(5))
+        ax.set_xticklabels([idx for n, idx in enumerate(df.index) if n % 5 == 0])
     elif graph_type == 'line':
         grapher = ax.plot
         grapher(df)
@@ -32,8 +34,6 @@ def create_graph(q: Query):
         grapher(df)
     else:
         raise ValueError("Graph type must be 'bar', 'line', or 'scatter'")
-
-
 
     plt.xticks(rotation=90)
     if title:
