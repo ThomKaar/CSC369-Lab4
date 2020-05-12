@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
 
+from constants import HEADERS
 from dataframes import get_df
 from output_html import Query
 
@@ -31,14 +32,24 @@ def create_graph(q: Query):
         ax.xaxis.set_major_locator(MultipleLocator(5))
     elif graph_type == 'scatter':
         grapher = ax.scatter
-        grapher(df)
+        x = np.arange(len(df.index))
+        for i, col in enumerate(df.columns):
+            grapher(x, df[col], label=col)
+        plt.xticks(x, df.index)
+        ax.xaxis.set_major_locator(MultipleLocator(5))
+        ax.set_xticklabels([idx for n, idx in enumerate(df.index) if n % 5 == 0])
     else:
         raise ValueError("Graph type must be 'bar', 'line', or 'scatter'")
 
     plt.xticks(rotation=90)
-    if title:
-        plt.title = title
+
+    label = HEADERS.get(q.task.get('track')) or HEADERS[q.task['ratio']['numerator']] + ' to ' + HEADERS[q.task[
+        'ratio']['denominator']] + " Ratio"
+    plt.ylabel(label)
     if legend:
-        ax.legend()
+        plt.legend(df.columns)
+    if title:
+        ax.set_title(title)
 
     plt.show()
+    plt.savefig('graph.png')

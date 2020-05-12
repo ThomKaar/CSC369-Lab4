@@ -1,18 +1,6 @@
 from dataframes import get_df
 from output_html import Query
 
-HEADERS = {
-    "positive": "Cumulative Positives",
-    "positiveIncrease": "Daily Positives",
-    "death": "Cumulative Deaths",
-    "deathIncrease": "Daily Deaths",
-    "tests": "Cumulative Tests",
-    "testIncrease": "Daily Tests",
-    "time": "Date",
-    "hospitalization": "Cumulative Hospitalized",
-    "hospitalizationIncrease": "Daily Hospitalized"
-}
-
 
 def get_table(q: Query) -> str:
     row = q.output['table'].get('row')
